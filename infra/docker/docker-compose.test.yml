@@ -1,0 +1,116 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: app_postgres_test
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./postgres/init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    networks:
+      - test_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: app_redis_test
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis_test_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    networks:
+      - test_network
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.backend
+    container_name: app_backend_test
+    environment:
+      DATABASE_URL: postgresql+asyncpg://test_user:test_password@postgres:5432/test_db
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: test-secret-key-for-testing-only
+      DEBUG: "true"
+      ENVIRONMENT: test
+    volumes:
+      - ../../backend:/app
+      - /app/__pycache__
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - test_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.frontend
+    container_name: app_frontend_test
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8001/api/v1
+      NODE_ENV: test
+    volumes:
+      - ../../frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    networks:
+      - test_network
+    command: npm run test
+
+  test-runner:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.backend
+    container_name: app_test_runner
+    environment:
+      DATABASE_URL: postgresql+asyncpg://test_user:test_password@postgres:5432/test_db
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: test-secret-key-for-testing-only
+      DEBUG: "true"
+      ENVIRONMENT: test
+      PYTEST_COVERAGE: "true"
+    volumes:
+      - ../../backend:/app
+      - /app/__pycache__
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - test_network
+    command: pytest --cov=app --cov-report=xml --cov-report=term-missing -v
+
+volumes:
+  postgres_test_data:
+  redis_test_data:
+
+networks:
+  test_network:
+    driver: bridge
