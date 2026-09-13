@@ -1,0 +1,8 @@
+backend/ @backend-team
+frontend/ @frontend-team
+infra/ @devops-team
+docs/ @tech-leads
+.github/ @devops-team
+Makefile @devops-team
+docker-compose.yml @devops-team
+README.md @tech-leads
