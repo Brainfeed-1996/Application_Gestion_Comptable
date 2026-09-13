@@ -1,0 +1,118 @@
+name: CD
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy:
+    name: Deploy to ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+        include:
+          - environment: dev
+            compose_file: infra/docker/docker-compose.yml
+            env_file: .env.dev
+            host: ${{ secrets.DEV_HOST }}
+            user: ${{ secrets.DEV_USER }}
+            ssh_key: ${{ secrets.DEV_SSH_KEY }}
+          - environment: staging
+            compose_file: infra/docker/docker-compose.prod.yml
+            env_file: .env.staging
+            host: ${{ secrets.STAGING_HOST }}
+            user: ${{ secrets.STAGING_USER }}
+            ssh_key: ${{ secrets.STAGING_SSH_KEY }}
+          - environment: prod
+            compose_file: infra/docker/docker-compose.prod.yml
+            env_file: .env.prod
+            host: ${{ secrets.PROD_HOST }}
+            user: ${{ secrets.PROD_USER }}
+            ssh_key: ${{ secrets.PROD_SSH_KEY }}
+    environment: ${{ matrix.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infra/docker/Dockerfile.backend
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Extract metadata for Frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: infra/docker/Dockerfile.frontend
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ matrix.host }}
+          username: ${{ matrix.user }}
+          key: ${{ matrix.ssh_key }}
+          script: |
+            cd /opt/app
+            docker compose -f ${{ matrix.compose_file }} --env-file ${{ matrix.env_file }} pull
+            docker compose -f ${{ matrix.compose_file }} --env-file ${{ matrix.env_file }} run --rm backend alembic upgrade head
+            docker compose -f ${{ matrix.compose_file }} --env-file ${{ matrix.env_file }} up -d --remove-orphans
+            docker image prune -f
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ matrix.host }}
+          username: ${{ matrix.user }}
+          key: ${{ matrix.ssh_key }}
+          script: |
+            sleep 15
+            curl -f http://localhost/health || exit 1
+            curl -f http://localhost:8000/health || exit 1
+            curl -f http://localhost:3000 || exit 1
