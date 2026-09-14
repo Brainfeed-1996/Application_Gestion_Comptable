@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { formatFrenchCurrency } from '@/lib/formatters';
@@ -37,7 +36,7 @@ export function BilanDashboardWidget({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle>Bilan</CardTitle>
-        <Badge variant={isPositive ? 'success' : 'destructive'} className="text-xs">
+        <Badge variant={isPositive ? 'success' : 'error'} className="text-xs">
           {isPositive ? 'Équilibré' : 'Déséquilibré'}
         </Badge>
       </CardHeader>
@@ -76,9 +75,15 @@ export function BilanDashboardWidget({
           showPoints={false}
         />
 
-        <Button asChild variant="outline" className="w-full mt-4" size="sm">
-          <a href={href}>Voir le bilan complet</a>
-        </Button>
+        <a
+          href={href}
+          aria-label="Voir le bilan complet"
+          className={cn(
+            'inline-flex w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 mt-4'
+          )}
+        >
+          Voir le bilan complet
+        </a>
       </CardContent>
     </Card>
   );
