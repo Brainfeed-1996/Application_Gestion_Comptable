@@ -67,7 +67,7 @@ export default function OrganizationPage() {
         legalName: organization.legalName ?? '',
         businessType: organization.industry ?? '',
         description: '',
-        siret: (organization as any).siret ?? '',
+        siret: organization.siren ?? '',
         vatNumber: organization.vatNumber ?? '',
         siren: organization.siren ?? '',
         address: organization.address ?? '',

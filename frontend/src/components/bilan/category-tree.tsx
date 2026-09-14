@@ -223,7 +223,7 @@ function TreeNode({
         </span>
 
         <span className="shrink-0 text-sm font-medium text-gray-900 tabular-nums">
-          {formatFrenchCurrency(node.amount, currency)}
+          {formatAmount(node.amount)}
         </span>
       </div>
 

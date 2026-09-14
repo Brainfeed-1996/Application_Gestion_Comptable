@@ -18,7 +18,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login(email, password);
-      router.push("/");
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Échec de la connexion");
     } finally {

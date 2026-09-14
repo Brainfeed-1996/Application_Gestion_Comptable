@@ -92,23 +92,6 @@ export default function ProfilePage() {
     }
   };
 
-  const validatePassword = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!passwordData.currentPassword) {
-      newErrors.currentPassword = 'Le mot de passe actuel est requis';
-    }
-    if (!passwordData.newPassword) {
-      newErrors.newPassword = 'Le nouveau mot de passe est requis';
-    } else if (passwordData.newPassword.length < 8) {
-      newErrors.newPassword = 'Le mot de passe doit contenir au moins 8 caractères';
-    }
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
-    }
-    setErrors((prev) => ({ ...prev, ...newErrors }));
-    return Object.keys(newErrors).filter((k) => k.startsWith('password') || k === 'currentPassword' || k === 'newPassword' || k === 'confirmPassword').length === 0;
-  };
-
   const handlePasswordSave = (e: React.FormEvent) => {
     e.preventDefault();
     setSuccess(null);
