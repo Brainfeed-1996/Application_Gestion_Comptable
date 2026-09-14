@@ -26,7 +26,7 @@
     "lucide-react": "^0.326.0",
     "next": "^14.2.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react-dom": "^19.3.0",
     "react-hook-form": "^7.51.0",
     "react-icons": "^5.0.1",
     "tailwind-merge": "^2.2.1",
@@ -37,7 +37,7 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.47",
-    "@types/react-dom": "^18.2.19",
+    "@types/react-dom": "^19.3.0",
     "@testing-library/jest-dom": "^6.2.3",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",
