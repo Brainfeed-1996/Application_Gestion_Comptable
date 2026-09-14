@@ -57,6 +57,14 @@ class BalanceSheetDraftUpdate(BaseModel):
     data: Optional[dict[str, Any]] = None
 
 
+class BalanceSheetDraftStatusUpdate(BaseModel):
+    status: str
+
+
+class BalanceSheetDuplicateRequest(BaseModel):
+    name: Optional[str] = None
+
+
 class BalanceSheetQuickCreate(BaseModel):
     name: Optional[str] = None
     fiscal_year: Optional[int] = None
@@ -66,3 +74,11 @@ class BalanceSheetQuickCreate(BaseModel):
 class BalanceSheetCalculatedResponse(BaseModel):
     totals: dict[str, Any]
     draft_id: Optional[UUID] = None
+
+
+class BalanceSheetValidationResponse(BaseModel):
+    is_valid: bool
+    difference: float
+    total_actif: float
+    total_passif_plus_equity: float
+    message: str

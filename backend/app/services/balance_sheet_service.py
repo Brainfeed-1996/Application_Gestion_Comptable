@@ -12,6 +12,217 @@ from app.models.balance_sheet import BalanceSheetTemplate, BalanceSheetDraft, Ba
 from app.core.exceptions import NotFoundException
 
 
+class BalanceSheetCalculationService:
+    def __init__(self, db: AsyncSession, org_id: UUID):
+        self.db = db
+        self.org_id = org_id
+
+    ACTIF_CATEGORIES = {
+        "immobilisations": ["20", "21", "22", "23"],
+        "stocks": ["31", "32", "33", "34", "35"],
+        "creances": ["411", "416", "445", "46"],
+        "tresorerie": ["512", "513", "514"],
+    }
+
+    PASSIF_CATEGORIES = {
+        "emprunts": ["161", "163", "164"],
+        "dettes_fournisseurs": ["401", "408"],
+        "dettes_fiscales": ["43", "44"],
+        "provisions": ["151", "154"],
+    }
+
+    EQUITE_CATEGORIES = {
+        "capital": ["101", "106"],
+        "reserves": ["11"],
+        "resultat": ["12"],
+        "subventions": ["13"],
+    }
+
+    async def calculate_bilan_totals(self, draft: BalanceSheetDraft) -> dict[str, Any]:
+        query = select(BalanceSheetItem).where(BalanceSheetItem.draft_id == draft.id)
+        result = await self.db.execute(query)
+        items = list(result.scalars().all())
+
+        totals = {
+            "actif": {"total": Decimal("0"), "categories": {}},
+            "passif": {"total": Decimal("0"), "categories": {}},
+            "capitaux_propres": {"total": Decimal("0"), "categories": {}},
+        }
+
+        for item in items:
+            amount = item.amount
+            category = item.category
+            account_code = item.account_code
+
+            if category == "asset":
+                totals["actif"]["total"] += amount
+                cat_name = self._get_actif_category(account_code)
+                if cat_name:
+                    totals["actif"]["categories"].setdefault(cat_name, Decimal("0"))
+                    totals["actif"]["categories"][cat_name] += amount
+            elif category == "liability":
+                totals["passif"]["total"] += amount
+                cat_name = self._get_passif_category(account_code)
+                if cat_name:
+                    totals["passif"]["categories"].setdefault(cat_name, Decimal("0"))
+                    totals["passif"]["categories"][cat_name] += amount
+            elif category == "equity":
+                totals["capitaux_propres"]["total"] += amount
+                cat_name = self._get_equite_category(account_code)
+                if cat_name:
+                    totals["capitaux_propres"]["categories"].setdefault(cat_name, Decimal("0"))
+                    totals["capitaux_propres"]["categories"][cat_name] += amount
+
+        return {
+            "actif": {
+                "total": float(totals["actif"]["total"]),
+                "categories": {k: float(v) for k, v in totals["actif"]["categories"].items()},
+            },
+            "passif": {
+                "total": float(totals["passif"]["total"]),
+                "categories": {k: float(v) for k, v in totals["passif"]["categories"].items()},
+            },
+            "capitaux_propres": {
+                "total": float(totals["capitaux_propres"]["total"]),
+                "categories": {k: float(v) for k, v in totals["capitaux_propres"]["categories"].items()},
+            },
+        }
+
+    def _get_actif_category(self, account_code: str) -> str | None:
+        for cat, codes in self.ACTIF_CATEGORIES.items():
+            for code in codes:
+                if account_code.startswith(code):
+                    return cat
+        return None
+
+    def _get_passif_category(self, account_code: str) -> str | None:
+        for cat, codes in self.PASSIF_CATEGORIES.items():
+            for code in codes:
+                if account_code.startswith(code):
+                    return cat
+        return None
+
+    def _get_equite_category(self, account_code: str) -> str | None:
+        for cat, codes in self.EQUITE_CATEGORIES.items():
+            for code in codes:
+                if account_code.startswith(code):
+                    return cat
+        return None
+
+    async def validate_bilan_balance(self, draft: BalanceSheetDraft) -> dict[str, Any]:
+        totals = await self.calculate_bilan_totals(draft)
+
+        total_actif = Decimal(str(totals["actif"]["total"]))
+        total_passif = Decimal(str(totals["passif"]["total"]))
+        total_equite = Decimal(str(totals["capitaux_propres"]["total"]))
+
+        expected_passif = total_passif + total_equite
+        difference = total_actif - expected_passif
+        is_balanced = abs(difference) < Decimal("0.01")
+
+        return {
+            "is_balanced": is_balanced,
+            "total_actif": float(total_actif),
+            "total_passif_plus_equite": float(expected_passif),
+            "difference": float(difference),
+            "details": {
+                "actif": float(total_actif),
+                "passif": float(total_passif),
+                "capitaux_propres": float(total_equite),
+            },
+        }
+
+    async def calculate_liquidity_ratios(self, draft: BalanceSheetDraft) -> dict[str, Any]:
+        totals = await self.calculate_bilan_totals(draft)
+
+        actif_categories = totals["actif"]["categories"]
+        passif_categories = totals["passif"]["categories"]
+
+        current_assets = (
+            Decimal(str(actif_categories.get("tresorerie", 0)))
+            + Decimal(str(actif_categories.get("creances", 0)))
+            + Decimal(str(actif_categories.get("stocks", 0)))
+        )
+        liquid_assets = (
+            Decimal(str(actif_categories.get("tresorerie", 0)))
+            + Decimal(str(actif_categories.get("creances", 0)))
+        )
+        current_liabilities = (
+            Decimal(str(passif_categories.get("dettes_fournisseurs", 0)))
+            + Decimal(str(passif_categories.get("dettes_fiscales", 0)))
+        )
+        total_debt = (
+            Decimal(str(passif_categories.get("emprunts", 0)))
+            + Decimal(str(passif_categories.get("dettes_fournisseurs", 0)))
+            + Decimal(str(passif_categories.get("dettes_fiscales", 0)))
+            + Decimal(str(passif_categories.get("provisions", 0)))
+        )
+        equity = Decimal(str(totals["capitaux_propres"]["total"]))
+
+        ratios = {}
+        if current_liabilities > 0:
+            ratios["current_ratio"] = float(current_assets / current_liabilities)
+            ratios["quick_ratio"] = float(liquid_assets / current_liabilities)
+        else:
+            ratios["current_ratio"] = None
+            ratios["quick_ratio"] = None
+
+        if equity > 0:
+            ratios["debt_to_equity"] = float(total_debt / equity)
+        else:
+            ratios["debt_to_equity"] = None
+
+        ratios["components"] = {
+            "current_assets": float(current_assets),
+            "liquid_assets": float(liquid_assets),
+            "current_liabilities": float(current_liabilities),
+            "total_debt": float(total_debt),
+            "equity": float(equity),
+        }
+
+        return ratios
+
+    async def generate_bilan_summary(self, draft: BalanceSheetDraft) -> dict[str, Any]:
+        totals = await self.calculate_bilan_totals(draft)
+        validation = await self.validate_bilan_balance(draft)
+        ratios = await self.calculate_liquidity_ratios(draft)
+
+        query = select(BalanceSheetItem).where(BalanceSheetItem.draft_id == draft.id)
+        result = await self.db.execute(query)
+        items = list(result.scalars().all())
+
+        top_actif_items = sorted(
+            [i for i in items if i.category == "asset"],
+            key=lambda x: x.amount,
+            reverse=True
+        )[:5]
+
+        top_passif_items = sorted(
+            [i for i in items if i.category == "liability"],
+            key=lambda x: x.amount,
+            reverse=True
+        )[:5]
+
+        return {
+            "draft_id": str(draft.id),
+            "name": draft.name,
+            "fiscal_year": draft.fiscal_year,
+            "status": draft.status,
+            "totals": totals,
+            "validation": validation,
+            "ratios": ratios,
+            "top_actif_items": [
+                {"account_code": i.account_code, "account_name": i.account_name, "amount": float(i.amount)}
+                for i in top_actif_items
+            ],
+            "top_passif_items": [
+                {"account_code": i.account_code, "account_name": i.account_name, "amount": float(i.amount)}
+                for i in top_passif_items
+            ],
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
 class BalanceSheetTemplateService:
     def __init__(self, db: AsyncSession, org_id: UUID):
         self.db = db
