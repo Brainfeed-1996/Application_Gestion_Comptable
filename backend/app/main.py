@@ -4,13 +4,22 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.responses import JSONResponse
+from starlette.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, AsyncSessionLocal, create_tables, close_database, get_session
 from app.core.security import get_redis_client
 from app.core.exceptions import AppException
 from app.api.v1.router import api_router
+
+
+async def _handle_app_exception(request, exc: AppException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.detail},
+        headers=exc.headers,
+    )
 
 
 @asynccontextmanager
@@ -28,7 +37,7 @@ app = FastAPI(
 )
 
 app.add_middleware(
-    "starlette.middleware.cors.CORSMiddleware",
+    CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=settings.cors_credentials,
     allow_methods=settings.cors_methods,
@@ -36,17 +45,6 @@ app.add_middleware(
 )
 
 app.add_exception_handler(AppException, _handle_app_exception)
-
-
-async def _handle_app_exception(request, exc: AppException):
-    from fastapi.responses import JSONResponse
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": exc.detail},
-        headers=exc.headers,
-    )
-
-
 app.include_router(api_router, prefix="/api/v1")
 
 

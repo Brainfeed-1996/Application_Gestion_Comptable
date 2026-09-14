@@ -19,8 +19,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./backend:/app:ro
     restart: unless-stopped
     networks:
       - app-network
@@ -33,12 +31,9 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     ports:
-      - "6000:3000"
+       - "6001:3000"
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     restart: unless-stopped
     networks:
       - app-network
