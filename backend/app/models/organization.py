@@ -124,3 +124,9 @@ class Organization(Base):
     financial_statements: Mapped[list[FinancialStatement]] = relationship(
         back_populates="organization", cascade="all, delete-orphan", passive_deletes=True
     )
+    journals: Mapped[list[Journal]] = relationship(
+        back_populates="organization", cascade="all, delete-orphan", passive_deletes=True
+    )
+    transaction_entries: Mapped[list[TransactionEntry]] = relationship(
+        back_populates="organization", cascade="all, delete-orphan", passive_deletes=True
+    )

@@ -104,3 +104,9 @@ class User(Base):
     financial_statements: Mapped[list[FinancialStatement]] = relationship(
         back_populates="generator", foreign_keys="FinancialStatement.generated_by", passive_deletes=True
     )
+    created_entries: Mapped[list[TransactionEntry]] = relationship(
+        back_populates="creator", foreign_keys="TransactionEntry.created_by", passive_deletes=True
+    )
+    updated_entries: Mapped[list[TransactionEntry]] = relationship(
+        back_populates="updater", foreign_keys="TransactionEntry.updated_by", passive_deletes=True
+    )

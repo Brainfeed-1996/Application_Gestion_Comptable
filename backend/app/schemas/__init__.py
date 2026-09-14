@@ -35,6 +35,14 @@ from app.schemas.account import (
     AccountCreate,
     AccountUpdate,
 )
+from app.schemas.journal import (
+    JournalResponse,
+    JournalCreate,
+    JournalUpdate,
+    TransactionEntryResponse,
+    TransactionEntryCreate,
+    TransactionEntryUpdate,
+)
 
 __all__ = [
     "BaseSchema",
@@ -66,4 +74,10 @@ __all__ = [
     "AccountResponse",
     "AccountCreate",
     "AccountUpdate",
+    "JournalResponse",
+    "JournalCreate",
+    "JournalUpdate",
+    "TransactionEntryResponse",
+    "TransactionEntryCreate",
+    "TransactionEntryUpdate",
 ]

@@ -14,6 +14,7 @@ from .subscription import Subscription, SubscriptionPlan
 from .notification import Notification
 from .recurring import RecurringExpense
 from .dashboard import DashboardMetric, CashFlowProjection, FinancialStatement
+from .journal import Journal, TransactionEntry
 
 __all__ = [
     "Base",
@@ -42,4 +43,6 @@ __all__ = [
     "DashboardMetric",
     "CashFlowProjection",
     "FinancialStatement",
+    "Journal",
+    "TransactionEntry",
 ]

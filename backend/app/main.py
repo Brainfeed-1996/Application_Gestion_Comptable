@@ -12,6 +12,7 @@ from app.database import engine, AsyncSessionLocal, create_tables, close_databas
 from app.core.security import get_redis_client
 from app.core.exceptions import AppException
 from app.api.v1.router import api_router
+from app.middleware.error_handler import setup_error_handlers
 
 
 async def _handle_app_exception(request, exc: AppException):
@@ -45,6 +46,7 @@ app.add_middleware(
 )
 
 app.add_exception_handler(AppException, _handle_app_exception)
+setup_error_handlers(app)
 app.include_router(api_router, prefix="/api/v1")
 
 
