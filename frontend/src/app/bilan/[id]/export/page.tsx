@@ -32,7 +32,7 @@ const dummyExportData: ExportRow[] = [
   { code: "513", libelle: "Stocks", montant: 18750, categorie: "Actif" },
   { code: "520", libelle: "Immobilisations", montant: 85000, categorie: "Actif" },
   { code: "401", libelle: "Fournisseurs", montant: 32500, categorie: "Passif" },
-  { code: "520", libelle: "Emprunts", montant: 45000, categorie: "Passif" },
+  { code: "401", libelle: "Emprunts", montant: 45000, categorie: "Passif" },
   { code: "530", libelle: "Dettes fiscales", montant: 7450, categorie: "Passif" },
 ];
 
@@ -116,10 +116,7 @@ export default function BilanExportPage() {
                       onChange={() => toggleSection(section.value)}
                       className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <label
-                      htmlFor={`section-${section.value}`}
-                      className="cursor-pointer text-sm"
-                    >
+                    <label htmlFor={`section-${section.value}`} className="cursor-pointer text-sm">
                       {section.label}
                     </label>
                   </div>
@@ -141,9 +138,7 @@ export default function BilanExportPage() {
         {isPreview && (
           <Card>
             <CardHeader>
-              <CardTitle>
-                Aperçu — {FORMATS.find((f) => f.value === selectedFormat)?.label}
-              </CardTitle>
+              <CardTitle>Aperçu — {FORMATS.find((f) => f.value === selectedFormat)?.label}</CardTitle>
               <CardDescription>
                 {selectedSections.map((s) => SECTIONS.find((sec) => sec.value === s)?.label).join(", ")}
               </CardDescription>
