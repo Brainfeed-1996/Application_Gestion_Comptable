@@ -234,30 +234,28 @@ export default function BilanDetailPage() {
                   Dupliquer
                 </Button>
                 <BilanExport filename={`${draft.name}-${draftId}`} />
-                <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
-                      Supprimer
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Supprimer ce bilan ?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action est irréversible. Le bilan "{draft.name}" sera supprimé définitivement.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete}>Supprimer</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
+                  Supprimer
+                </Button>
               </div>
             </div>
           </div>
         </div>
       </header>
+
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Supprimer ce bilan ?">
+        <p className="text-gray-600">
+          Cette action est irréversible. Le bilan "{draft.name}" sera supprimé définitivement.
+        </p>
+        <div slot="footer" className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+            Annuler
+          </Button>
+          <Button variant="destructive" onClick={handleDelete}>
+            Supprimer
+          </Button>
+        </div>
+      </Dialog>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

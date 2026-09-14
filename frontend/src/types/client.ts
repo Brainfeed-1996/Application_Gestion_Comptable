@@ -1,3 +1,5 @@
+export type ClientType = 'customer' | 'supplier';
+
 export interface Client {
   id: string;
   name: string;
@@ -9,6 +11,7 @@ export interface Client {
   country: string;
   siren?: string;
   naf?: string;
+  type: ClientType;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
