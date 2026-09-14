@@ -6,7 +6,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { BilanExport } from "./bilan-export";
 import { apiClient } from "@/lib/api";
 import { handleApiError } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+import { useToastContext } from "@/components/ui/toast-provider";
 import type { BalanceSheetDraft } from "@/types/balance-sheet";
 
 export interface BilanActionsProps {
