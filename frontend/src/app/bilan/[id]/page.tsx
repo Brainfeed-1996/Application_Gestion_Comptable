@@ -243,18 +243,19 @@ export default function BilanDetailPage() {
         </div>
       </header>
 
-      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Supprimer ce bilan ?">
+      <Dialog open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Supprimer ce bilan ?" footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Supprimer
+            </Button>
+          </div>
+        }>
         <p className="text-gray-600">
           Cette action est irréversible. Le bilan "{draft.name}" sera supprimé définitivement.
         </p>
-        <div slot="footer" className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-            Annuler
-          </Button>
-          <Button variant="destructive" onClick={handleDelete}>
-            Supprimer
-          </Button>
-        </div>
       </Dialog>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

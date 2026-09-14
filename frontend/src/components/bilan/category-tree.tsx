@@ -21,20 +21,15 @@ export interface CategoryTreeNode {
 }
 
 export interface CategoryTreeProps {
-  /** Grouped categories as returned by useBilanCategories. */
   groups: Array<{
     category: BilanCategory;
     label: string;
     accounts: BilanCategoryAccount[];
     total: number;
   }>;
-  /** Optional currency for amounts. */
   currency?: string;
-  /** Optional className. */
   className?: string;
-  /** Callback fired when an account node is clicked. */
   onAccountClick?: (account: BilanCategoryAccount, category: BilanCategory) => void;
-  /** Initial expanded node ids. */
   defaultExpanded?: string[];
 }
 

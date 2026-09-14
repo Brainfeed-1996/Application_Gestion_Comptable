@@ -1,5 +1,7 @@
 import { apiClient } from "@/lib/api";
 
+export type ClientType = 'customer' | 'supplier';
+
 export interface ClientFull {
   id: string;
   name: string;
@@ -13,6 +15,7 @@ export interface ClientFull {
   phone?: string;
   balance: number;
   status: "active" | "inactive";
+  type: ClientType;
   createdAt: string;
 }
 
@@ -21,12 +24,14 @@ export async function getClients(params?: {
   limit?: number;
   search?: string;
   status?: string;
+  type?: ClientType;
 }): Promise<{ items: ClientFull[]; total: number; page: number; limit: number; totalPages: number }> {
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set("page", String(params.page));
   if (params?.limit) searchParams.set("limit", String(params.limit));
   if (params?.search) searchParams.set("search", params.search);
   if (params?.status) searchParams.set("status", params.status);
+  if (params?.type) searchParams.set("type", params.type);
 
   const query = searchParams.toString();
   return apiClient
