@@ -95,7 +95,7 @@ function categorizeRows(
       label: row.label,
       amount: row.value,
     };
-    if (CAPI TEX_KEYWORDS.some((k) => label.includes(k))) {
+    if (CAPITAUX_KEYWORDS.some((k) => label.includes(k))) {
       capitaux.push(item);
     } else if (PASSIF_KEYWORDS.some((k) => label.includes(k))) {
       passif.push(item);
