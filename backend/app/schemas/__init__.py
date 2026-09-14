@@ -43,6 +43,7 @@ from app.schemas.journal import (
     TransactionEntryCreate,
     TransactionEntryUpdate,
 )
+from app.schemas.audit_log import AuditLogResponse
 
 __all__ = [
     "BaseSchema",
@@ -80,4 +81,5 @@ __all__ = [
     "TransactionEntryResponse",
     "TransactionEntryCreate",
     "TransactionEntryUpdate",
+    "AuditLogResponse",
 ]

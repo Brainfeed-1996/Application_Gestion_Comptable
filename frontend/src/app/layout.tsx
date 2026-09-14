@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { ThemeProvider } from "@/providers/theme-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -17,9 +18,11 @@ export default function RootLayout({
   return (
     <html lang="fr" className={inter.variable}>
       <body className="min-h-screen bg-background font-sans">
-        <Providers>
-          {children}
-        </Providers>
+        <ThemeProvider>
+          <Providers>
+            {children}
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );
