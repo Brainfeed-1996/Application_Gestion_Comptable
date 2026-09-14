@@ -1,4 +1,9 @@
 from app.schemas.base import BaseSchema, BaseResponse
+from app.schemas.notification import (
+    NotificationCreate,
+    NotificationResponse,
+    NotificationUpdate,
+)
 from app.schemas.balance_sheet import (
     BalanceSheetTemplateResponse,
     BalanceSheetDraftResponse,
@@ -29,6 +34,9 @@ from app.schemas.payment import (
 __all__ = [
     "BaseSchema",
     "BaseResponse",
+    "NotificationCreate",
+    "NotificationResponse",
+    "NotificationUpdate",
     "BalanceSheetTemplateResponse",
     "BalanceSheetDraftResponse",
     "BalanceSheetDraftCreate",
@@ -40,6 +48,9 @@ __all__ = [
     "UserLogin",
     "UserRegister",
     "TokenResponse",
+    "ClientCreate",
+    "ClientUpdate",
+    "ClientResponse",
     "InvoiceResponse",
     "InvoiceCreate",
     "InvoiceUpdate",

@@ -1,206 +1,236 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  useBalanceSheetTemplates,
+  useBalanceSheetDrafts,
+  type BalanceSheetDraft,
+} from "@/hooks/use-balance-sheet";
+
+const STATUS_LABELS: Record<BalanceSheetDraft["status"], string> = {
+  draft: "Brouillon",
+  calculated: "Calculé",
+  finalized: "Finalisé",
+};
+
+const STATUS_COLORS: Record<BalanceSheetDraft["status"], string> = {
+  draft: "bg-gray-100 text-gray-800",
+  calculated: "bg-blue-100 text-blue-800",
+  finalized: "bg-emerald-100 text-emerald-800",
+};
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleDateString("fr-FR", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function Avatar({ name, avatar }: { name: string; avatar?: string }) {
+  if (avatar) {
+    return (
+      <img
+        src={avatar}
+        alt={name}
+        className="h-12 w-12 rounded-full object-cover"
+      />
+    );
+  }
+  const initials = name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+  return (
+    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+      {initials || "U"}
+    </div>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout, isLoading } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const {
+    user,
+    isLoading: authLoading,
+    isAuthenticated,
+    logout,
+  } = useAuth();
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="animate-pulse text-gray-500">Chargement...</div>
-      </div>
-    );
+  const {
+    data: templates,
+    isLoading: templatesLoading,
+    error: templatesError,
+  } = useBalanceSheetTemplates();
+
+  const { data: drafts, isLoading: draftsLoading, error: draftsError } =
+    useBalanceSheetDrafts();
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  if (authLoading || !isAuthenticated) {
+    return <LoadingSpinner />;
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
-  };
+  const templateCount = templates?.length ?? 0;
+  const draftCount = drafts?.length ?? 0;
+  const recentDrafts = (drafts ?? []).slice().sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Global">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link href="/dashboard" className="text-xl font-bold text-gray-900">
-                Comptable
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <header className="bg-white shadow">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <nav className="flex items-center gap-4">
+              <Link href="/dashboard" className="text-lg font-bold text-blue-700">
+                Application Comptable
               </Link>
-              <div className="hidden md:flex md:gap-6">
-                <Link
-                  href="/dashboard"
-                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
-                  Tableau de bord
-                </Link>
-                <Link
-                  href="/bilan"
-                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
-                  Bilan comptable
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex sm:items-center sm:gap-3">
-                <span className="text-sm text-gray-700">
-                  {user?.email || "Utilisateur"}
-                </span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+              <Link
+                href="/bilan"
+                className="text-sm font-medium text-gray-600 hover:text-blue-700"
               >
-                Déconnexion
-              </button>
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden rounded-md p-2 text-gray-700 hover:bg-gray-100"
-                aria-label="Menu"
-                aria-expanded={isMenuOpen}
+                Gestion des bilans
+              </Link>
+              <Link
+                href="/login"
+                className="text-sm font-medium text-gray-600 hover:text-blue-700"
               >
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  {isMenuOpen ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  )}
-                </svg>
-              </button>
-            </div>
+                Connexion
+              </Link>
+            </nav>
+            <button
+              onClick={() => logout()}
+              className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            >
+              Déconnexion
+            </button>
           </div>
-          {isMenuOpen && (
-            <div className="md:hidden py-4 border-t border-gray-200">
-              <div className="flex flex-col gap-2">
-                <Link
-                  href="/dashboard"
-                  className="px-2 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md"
-                >
-                  Tableau de bord
-                </Link>
-                <Link
-                  href="/bilan"
-                  className="px-2 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md"
-                >
-                  Bilan comptable
-                </Link>
-              </div>
-            </div>
-          )}
-        </nav>
+        </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Bienvenue, {user?.firstName || user?.email || "Utilisateur"} !
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Gérez votre comptabilité et vos bilans financiers.
-          </p>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <Link
-            href="/bilan"
-            className="group rounded-lg bg-white p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600 group-hover:bg-blue-200 transition-colors">
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Bilan comptable</h3>
-                <p className="text-sm text-gray-500">Créer et gérer vos bilans</p>
-              </div>
-            </div>
-          </Link>
-
-          <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 text-green-600">
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Factures</h3>
-                <p className="text-sm text-gray-500">Gestion des factures clients</p>
-              </div>
-            </div>
+        <section className="mb-8 flex items-center gap-6">
+          <Avatar name={user?.name ?? "Utilisateur"} avatar={user?.avatar} />
+          <div>
+            <h1 className="text-2xl font-bold">{user?.name}</h1>
+            <p className="text-gray-600">{user?.email}</p>
+            <p className="text-sm text-gray-500">Rôle : {user?.role}</p>
           </div>
+        </section>
 
-          <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Transactions</h3>
-                <p className="text-sm text-gray-500">Suivi des mouvements</p>
-              </div>
-            </div>
+        <section className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="rounded-lg bg-white p-6 shadow">
+            <p className="text-sm font-medium text-gray-500">
+              Modèles de bilan
+            </p>
+            <p className="text-3xl font-bold">{templateCount}</p>
           </div>
-        </div>
+          <div className="rounded-lg bg-white p-6 shadow">
+            <p className="text-sm font-medium text-gray-500">
+              Brouillons de bilan
+            </p>
+            <p className="text-3xl font-bold">{draftCount}</p>
+          </div>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="mb-4 text-xl font-semibold">Modèles de bilan</h2>
+          {templatesLoading ? (
+            <p className="text-sm text-gray-500">Chargement des modèles...</p>
+          ) : templatesError ? (
+            <p className="text-sm text-red-600">
+              Impossible de charger les modèles.
+            </p>
+          ) : templateCount === 0 ? (
+            <p className="text-sm text-gray-500">Aucun modèle disponible.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      Nom
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      Sections
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      Créé le
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {(templates ?? []).map((template) => (
+                    <tr key={template.id}>
+                      <td className="px-4 py-2 text-sm">{template.name}</td>
+                      <td className="px-4 py-2 text-sm">
+                        {template.sections?.length ?? 0}
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        {formatDate(template.createdAt)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="mb-4 text-xl font-semibold">
+            Brouillons de bilan récents
+          </h2>
+          {draftsLoading ? (
+            <p className="text-sm text-gray-500">Chargement des brouillons...</p>
+          ) : draftsError ? (
+            <p className="text-sm text-red-600">
+              Impossible de charger les brouillons.
+            </p>
+          ) : draftCount === 0 ? (
+            <p className="text-sm text-gray-500">Aucun brouillon disponible.</p>
+          ) : (
+            <ul className="space-y-3">
+              {recentDrafts.map((draft) => (
+                <li
+                  key={draft.id}
+                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3"
+                >
+                  <div>
+                    <p className="font-medium">{draft.name}</p>
+                    <p className="text-sm text-gray-500">
+                      Modifié le {formatDate(draft.updatedAt)}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[draft.status]}`}
+                  >
+                    {STATUS_LABELS[draft.status]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );

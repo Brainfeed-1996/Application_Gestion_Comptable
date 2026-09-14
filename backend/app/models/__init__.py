@@ -1,4 +1,5 @@
 from .base import Base
+from .client import Client
 from .user import User
 from .organization import Organization
 from .account import Account, AccountCategory, ChartOfAccount
@@ -16,6 +17,7 @@ from .dashboard import DashboardMetric, CashFlowProjection, FinancialStatement
 
 __all__ = [
     "Base",
+    "Client",
     "User",
     "Organization",
     "Account",

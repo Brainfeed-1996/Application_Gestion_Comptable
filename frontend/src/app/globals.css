@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+    --border: 210 17.5% 90%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 29.6% 60.4%;
+    --secondary-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 224 71.4% 4.1%;
+    --foreground: 0 0% 100%;
+    --border: 210 29.6% 35.5%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 29.6% 45.4%;
+    --secondary-foreground: 210 29.6% 60.4%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-transparent bg-transparent;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

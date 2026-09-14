@@ -128,3 +128,6 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
