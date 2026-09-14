@@ -5,6 +5,7 @@ import type { TransactionCreate } from '@/types/transaction';
 import type { InvoiceCreate } from '@/types/invoice';
 import type { AccountCreate } from '@/types/account';
 import { API_BASE_URL } from './constants';
+import { clearTokens } from './auth';
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -74,6 +75,19 @@ export const apiClient = axios.create({
   baseURL: API_BASE_URL,
 });
 
+export function handleApiError(error: unknown): Error {
+  if (axios.isAxiosError(error)) {
+    const message = error.response?.data?.error?.message
+      || error.response?.data?.message
+      || error.message;
+    return new Error(message);
+  }
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error(String(error));
+}
+
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('accessToken');
@@ -83,3 +97,18 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      if (typeof window !== 'undefined') {
+        clearTokens();
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(handleApiError(error));
+  },
+);
+
+export default apiClient;

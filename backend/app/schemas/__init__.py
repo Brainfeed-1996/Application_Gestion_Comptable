@@ -30,6 +30,11 @@ from app.schemas.payment import (
     PaymentCreate,
     PaymentUpdate,
 )
+from app.schemas.account import (
+    AccountResponse,
+    AccountCreate,
+    AccountUpdate,
+)
 
 __all__ = [
     "BaseSchema",
@@ -58,4 +63,7 @@ __all__ = [
     "PaymentResponse",
     "PaymentCreate",
     "PaymentUpdate",
+    "AccountResponse",
+    "AccountCreate",
+    "AccountUpdate",
 ]

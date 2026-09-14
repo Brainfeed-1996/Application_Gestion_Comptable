@@ -81,6 +81,7 @@ class AccountUpdate(BaseModel):
 
 
 class AccountResponse(BaseSchema):
+    id: UUID
     organization_id: UUID
     name: str
     account_type: str
