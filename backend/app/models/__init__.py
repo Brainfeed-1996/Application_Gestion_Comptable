@@ -15,6 +15,7 @@ from .notification import Notification
 from .recurring import RecurringExpense
 from .dashboard import DashboardMetric, CashFlowProjection, FinancialStatement
 from .journal import Journal, TransactionEntry
+from .bilan_history import BilanHistory
 
 __all__ = [
     "Base",
@@ -45,4 +46,5 @@ __all__ = [
     "FinancialStatement",
     "Journal",
     "TransactionEntry",
+    "BilanHistory",
 ]

@@ -11,6 +11,8 @@ from app.models.user import User
 from app.services.balance_sheet_service import BalanceSheetTemplateService
 from app.schemas.balance_sheet import (
     BalanceSheetTemplateResponse,
+    BalanceSheetTemplateCreate,
+    BalanceSheetTemplateUpdate,
     BalanceSheetDraftResponse,
     BalanceSheetDraftCreate,
     BalanceSheetDraftUpdate,
@@ -33,6 +35,60 @@ async def list_templates(
     service = BalanceSheetTemplateService(db, current_user.organization_id)
     templates = await service.list_templates(business_type)
     return templates
+
+
+@router.get("/templates/default", response_model=BalanceSheetTemplateResponse)
+async def get_default_template(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    service = BalanceSheetTemplateService(db, current_user.organization_id)
+    template = await service.get_default_template()
+    return template
+
+
+@router.post("/templates", response_model=BalanceSheetTemplateResponse, status_code=status.HTTP_201_CREATED)
+async def create_template(
+    data: BalanceSheetTemplateCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    service = BalanceSheetTemplateService(db, current_user.organization_id)
+    template = await service.create_template(data.model_dump())
+    return template
+
+
+@router.put("/templates/{template_id}", response_model=BalanceSheetTemplateResponse)
+async def update_template(
+    template_id: UUID,
+    data: BalanceSheetTemplateUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    service = BalanceSheetTemplateService(db, current_user.organization_id)
+    template = await service.update_template(template_id, data.model_dump(exclude_unset=True))
+    return template
+
+
+@router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_template(
+    template_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    service = BalanceSheetTemplateService(db, current_user.organization_id)
+    await service.delete_template(template_id)
+
+
+@router.post("/templates/{template_id}/set-default", response_model=BalanceSheetTemplateResponse)
+async def set_default_template(
+    template_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    service = BalanceSheetTemplateService(db, current_user.organization_id)
+    template = await service.set_default_template(template_id)
+    return template
 
 
 @router.get("/templates/{template_id}", response_model=BalanceSheetTemplateResponse)
@@ -144,20 +200,6 @@ async def quick_generate(
     service = BalanceSheetTemplateService(db, current_user.organization_id)
     totals = await service.quick_generate(data.model_dump())
     return {"totals": totals, "draft_id": None}
-
-
-@router.get("/templates/default/{business_type}", response_model=BalanceSheetTemplateResponse)
-async def get_default_template(
-    business_type: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session),
-):
-    service = BalanceSheetTemplateService(db, current_user.organization_id)
-    template = await service.get_default_template(business_type, db)
-    if not template:
-        from app.core.exceptions import NotFoundException
-        raise NotFoundException(f"Default template for business type {business_type} not found")
-    return template
 
 
 @router.put("/drafts/{draft_id}/status", response_model=BalanceSheetDraftResponse)

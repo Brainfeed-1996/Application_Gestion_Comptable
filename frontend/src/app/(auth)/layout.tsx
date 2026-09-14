@@ -1,13 +1,15 @@
+'use client';
+
+import { AuthLayout as AuthLayoutComponent } from '@/components/auth/auth-layout';
+
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted to-background p-4">
-      <main className="w-full max-w-[420px]" role="main">
-        {children}
-      </main>
-    </div>
+    <AuthLayoutComponent>
+      {children}
+    </AuthLayoutComponent>
   );
 }
