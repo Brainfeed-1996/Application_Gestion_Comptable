@@ -324,7 +324,8 @@ class BalanceSheetTemplateService:
     async def finalize_draft(self, draft_id: UUID) -> BalanceSheetDraft:
         draft = await self.get_draft(draft_id)
         draft.status = "completed"
-        draft.calculated_totals = self.calculate_totals(draft.data)
+        draft.calculated_totals = await self.calculate_totals(draft.data)
+        draft.finalized_at = datetime.now()
         await self.db.flush()
         return draft
 
@@ -333,3 +334,121 @@ class BalanceSheetTemplateService:
         draft.deleted_at = date.today()
         draft.status = "archived"
         await self.db.flush()
+
+    async def get_templates_by_org(self, org_id: UUID, db: AsyncSession) -> list[BalanceSheetTemplate]:
+        query = select(BalanceSheetTemplate).where(
+            BalanceSheetTemplate.organization_id.in_([org_id, None]),
+            BalanceSheetTemplate.is_active == True,
+        ).order_by(BalanceSheetTemplate.is_default.desc(), BalanceSheetTemplate.name)
+        result = await db.execute(query)
+        return list(result.scalars().all())
+
+    async def get_default_template(self, business_type: str, db: AsyncSession) -> BalanceSheetTemplate | None:
+        query = select(BalanceSheetTemplate).where(
+            BalanceSheetTemplate.business_type == business_type,
+            BalanceSheetTemplate.is_default == True,
+            BalanceSheetTemplate.is_active == True,
+            BalanceSheetTemplate.organization_id.is_(None),
+        )
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def create_draft_from_template(self, template_id: UUID, org_id: UUID, name: str) -> BalanceSheetDraft:
+        template = await self.get_template(template_id)
+        
+        draft = BalanceSheetDraft(
+            organization_id=org_id,
+            template_id=template_id,
+            name=name,
+            fiscal_year=date.today().year,
+            status="draft",
+            data={},
+        )
+        self.db.add(draft)
+        await self.db.flush()
+
+        await self._initialize_items_from_template(draft, template)
+        return draft
+
+    async def calculate_balance_sheet(self, draft: BalanceSheetDraft) -> dict[str, Any]:
+        from sqlalchemy import select as sa_select
+        
+        query = sa_select(BalanceSheetItem).where(BalanceSheetItem.draft_id == draft.id)
+        result = await self.db.execute(query)
+        items = list(result.scalars().all())
+        
+        totals_by_category = {}
+        for item in items:
+            cat = item.category
+            if cat not in totals_by_category:
+                totals_by_category[cat] = Decimal("0")
+            totals_by_category[cat] += item.amount
+        
+        total_actif = totals_by_category.get("asset", Decimal("0"))
+        total_passif = totals_by_category.get("liability", Decimal("0"))
+        total_equity = totals_by_category.get("equity", Decimal("0"))
+        total_passif_equity = total_passif + total_equity
+        difference = total_actif - total_passif_equity
+        equilibre = abs(difference) < Decimal("0.01")
+        
+        return {
+            "total_actif": float(total_actif),
+            "total_passif": float(total_passif),
+            "total_equity": float(total_equity),
+            "total_passif_equity": float(total_passif_equity),
+            "difference": float(difference),
+            "equilibre": equilibre,
+            "by_category": {k: float(v) for k, v in totals_by_category.items()},
+        }
+
+    async def validate_balance(self, draft: BalanceSheetDraft) -> dict[str, Any]:
+        calculated = await self.calculate_balance_sheet(draft)
+        return {
+            "is_valid": calculated["equilibre"],
+            "difference": calculated["difference"],
+            "total_actif": calculated["total_actif"],
+            "total_passif_plus_equity": calculated["total_passif_equity"],
+            "message": "Balance sheet is balanced" if calculated["equilibre"] else f"Imbalance detected: {calculated['difference']}",
+        }
+
+    async def duplicate_draft(self, draft_id: UUID, new_name: str | None = None) -> BalanceSheetDraft:
+        original = await self.get_draft(draft_id)
+        
+        new_draft = BalanceSheetDraft(
+            organization_id=self.org_id,
+            template_id=original.template_id,
+            name=new_name or f"{original.name} (copie)",
+            fiscal_year=original.fiscal_year,
+            status="draft",
+            data=original.data.copy() if original.data else {},
+        )
+        self.db.add(new_draft)
+        await self.db.flush()
+        
+        query = select(BalanceSheetItem).where(BalanceSheetItem.draft_id == original.id)
+        result = await self.db.execute(query)
+        items = list(result.scalars().all())
+        
+        for item in items:
+            new_item = BalanceSheetItem(
+                draft_id=new_draft.id,
+                category=item.category,
+                account_code=item.account_code,
+                account_name=item.account_name,
+                amount=item.amount,
+                is_calculated=item.is_calculated,
+            )
+            self.db.add(new_item)
+        
+        await self.db.flush()
+        return new_draft
+
+    async def update_draft_status(self, draft_id: UUID, status: str) -> BalanceSheetDraft:
+        draft = await self.get_draft(draft_id)
+        draft.status = status
+        draft.updated_at = date.today()
+        if status == "completed":
+            draft.finalized_at = datetime.now()
+            draft.calculated_totals = await self.calculate_totals(draft.data)
+        await self.db.flush()
+        return draft
