@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useApiMutation } from "@/hooks/use-api";
+import { authLogin, authRegister } from "@/services/auth.service";
 
 interface User {
   id: string;
@@ -47,61 +49,43 @@ export function useAuth() {
     checkAuth();
   }, [checkAuth]);
 
-  const login = useCallback(
-    async (email: string, password: string) => {
-      const response = await apiClient.post<{ user: User; accessToken: string; refreshToken: string }>(
-        "/auth/login",
-        { email, password },
-      );
-      const { user, accessToken, refreshToken } = response.data;
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("user", JSON.stringify(user));
-      setState({ user, isAuthenticated: true, isLoading: false });
-    },
-    [],
-  );
-
-  const register = useCallback(
-    async (data: {
-      name: string;
-      email: string;
-      password: string;
-      confirmPassword: string;
-    }) => {
-      const response = await apiClient.post<{ user: User; accessToken: string; refreshToken: string }>(
-        "/auth/register",
-        data,
-      );
-      const { user, accessToken, refreshToken } = response.data;
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("user", JSON.stringify(user));
-      setState({ user, isAuthenticated: true, isLoading: false });
-    },
-    [],
-  );
-
   const logout = useCallback(async () => {
     try {
       await apiClient.post("/auth/logout", {});
     } catch {
       // Ignore logout errors, still clear state
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
       setState({ user: null, isAuthenticated: false, isLoading: false });
       router.push("/login");
     }
   }, [router]);
 
+  const login = useApiMutation(authLogin, {
+    onSuccess: (data) => {
+      setState({
+        user: data.user,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    },
+  });
+
+  const register = useApiMutation(authRegister, {
+    onSuccess: (data) => {
+      setState({
+        user: data.user,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    },
+  });
+
   return {
     user: state.user,
     isAuthenticated: state.isAuthenticated,
-    login,
-    register,
     logout,
     isLoading: state.isLoading,
+    login,
+    register,
   };
 }
