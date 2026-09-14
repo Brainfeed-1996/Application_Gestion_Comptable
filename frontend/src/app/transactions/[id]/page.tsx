@@ -26,7 +26,7 @@ export default function TransactionDetailPage() {
 
   const handleDelete = async () => {
     const deleted = await remove();
-    if (deleted) {
+    if (deleted !== null) {
       router.push("/transactions");
     }
   };

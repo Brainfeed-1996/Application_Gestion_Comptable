@@ -6,10 +6,6 @@ import { cn } from "@/lib/utils";
 import { formatNumber } from "@/lib/formatters";
 import type { BilanCategory, BilanCategoryAccount } from "@/hooks/use-bilan-categories";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 export interface CategoryTreeNode {
   id: string;
   label: string;
@@ -33,10 +29,6 @@ export interface CategoryTreeProps {
   defaultExpanded?: string[];
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function buildTree(groups: CategoryTreeProps["groups"]): CategoryTreeNode[] {
   return groups.map((group) => ({
     id: group.category,
@@ -57,10 +49,6 @@ function buildTree(groups: CategoryTreeProps["groups"]): CategoryTreeNode[] {
     })),
   }));
 }
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 
 export function CategoryTree({
   groups,
@@ -124,10 +112,6 @@ export function CategoryTree({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// TreeNode
-// ---------------------------------------------------------------------------
 
 interface TreeNodeProps {
   node: CategoryTreeNode;

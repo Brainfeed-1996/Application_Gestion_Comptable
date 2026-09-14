@@ -103,16 +103,10 @@ export default function BilanDetailPage() {
   const handleDuplicate = async () => {
     if (!draft) return;
     try {
-      await queryClient.mutationCache?.build(new import("@tanstack/react-query").MutationCache()).execute({
-        mutationFn: () =>
-          import("@/lib/api").then(({ apiClient }) =>
-            apiClient.post("/balance-sheet/quick", { name: `${draft.name} (copie)` }).then((r) => r.data)
-          ),
-        onSuccess: () => {
-          refetchDrafts();
-          router.push("/bilan");
-        },
-      });
+      const { apiClient } = await import("@/lib/api");
+      await apiClient.post("/balance-sheet/quick", { name: `${draft.name} (copie)` });
+      refetchDrafts();
+      router.push("/bilan");
     } catch {
       alert("Erreur lors de la duplication");
     }
