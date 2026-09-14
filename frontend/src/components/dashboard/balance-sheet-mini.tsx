@@ -165,7 +165,7 @@ export function BalanceSheetMini({
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
-              <Scale className="h-4.5 w-4.5" aria-hidden="true" />
+              <Scale className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

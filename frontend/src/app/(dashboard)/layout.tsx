@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { Providers } from '@/components/providers';
+import { ToastProvider } from '@/components/ui/toast-provider';
 import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
@@ -34,21 +35,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar pathname={pathname} />
-      <div className={cn('transition-[margin] duration-200', sidebarOpen ? 'ml-0' : 'ml-64')}>
-        <Header
-          title={getPageTitle(pathname)}
-          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-        />
-        <main className="p-6 pb-20" role="main" aria-label="Contenu principal">
-          {children}
-        </main>
-        <div className="fixed bottom-0 right-0 left-64">
-          <Footer />
+    <Providers>
+      <ToastProvider position="top-right">
+        <div className="min-h-screen bg-background">
+          <Sidebar pathname={pathname} />
+          <div className={cn('transition-[margin] duration-200', sidebarOpen ? 'ml-0' : 'ml-64')}>
+            <Header
+              title={getPageTitle(pathname)}
+              onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+            />
+            <main className="p-6 pb-20" role="main" aria-label="Contenu principal">
+              {children}
+            </main>
+            <div className="fixed bottom-0 right-0 left-64">
+              <Footer />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </ToastProvider>
+    </Providers>
   );
 }
 

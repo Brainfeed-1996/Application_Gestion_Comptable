@@ -1,17 +1,33 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useTransactions } from "@/hooks/use-transactions";
 import type { Transaction } from "@/types/transaction";
+import { exportToCSV } from "@/lib/utils/export";
+import type { ExportRow } from "@/lib/utils/export";
+import { TransactionForm, type TransactionFormData } from "@/components/transactions/transaction-form";
+import { Button } from "@/components/ui/button";
+import { Select as UISelect } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function TransactionsPage() {
-  const { fetchAll, isLoading, error } = useTransactions();
+  const { fetchAll, create, isLoading, error } = useTransactions();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterAccount, setFilterAccount] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+
+  const categoryOptions = useMemo(() => {
+    const cats = new Set<string>();
+    transactions.forEach((t) => {
+      if (t.categoryName) cats.add(t.categoryName);
+    });
+    return Array.from(cats).sort();
+  }, [transactions]);
 
   const handleSearch = useCallback(async () => {
     const result = await fetchAll({
@@ -26,6 +42,41 @@ export default function TransactionsPage() {
       setTransactions(result.items);
     }
   }, [fetchAll, search, filterType, filterCategory, filterAccount]);
+
+  const handleQuickAddSubmit = useCallback(
+    async (data: TransactionFormData) => {
+      const result = await create({
+        date: data.date,
+        label: data.label,
+        amount: data.amount,
+        direction: data.type,
+        categoryId: data.category || "",
+        accountId: data.account,
+        counterparty: "",
+        reference: data.reference || "",
+        description: data.description || "",
+        currency: "EUR",
+      });
+      if (result) {
+        setShowQuickAdd(false);
+        handleSearch();
+      }
+    },
+    [create, handleSearch]
+  );
+
+  const handleExportCSV = useCallback(() => {
+    const rows: ExportRow[] = transactions.map((t) => ({
+      Date: t.date,
+      Libellé: t.label,
+      Montant: t.amount,
+      Type: t.direction,
+      Catégorie: t.categoryName || "",
+      Compte: t.accountName || "",
+      Référence: t.reference || "",
+    }));
+    exportToCSV(rows, `transactions_${new Date().toISOString().split("T")[0]}`);
+  }, [transactions]);
 
   const formatAmount = (amount: number, direction: "debit" | "credit") => {
     const sign = direction === "debit" ? "-" : "+";
@@ -45,18 +96,38 @@ export default function TransactionsPage() {
               Gérez vos transactions comptables
             </p>
           </div>
-          <Link
-            href="/transactions/new"
-            className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Ajouter une transaction
-          </Link>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowQuickAdd((v) => !v)}
+            >
+              {showQuickAdd ? "Masquer l'ajout rapide" : "Ajout rapide"}
+            </Button>
+            <Link
+              href="/transactions/new"
+              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Ajouter une transaction
+            </Link>
+          </div>
         </div>
 
         {error && (
           <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">
             Erreur lors du chargement des transactions
           </div>
+        )}
+
+        {showQuickAdd && (
+          <Card>
+            <CardContent className="pt-6">
+              <TransactionForm
+                onSubmit={handleQuickAddSubmit}
+                onCancel={() => setShowQuickAdd(false)}
+                isLoading={isLoading}
+              />
+            </CardContent>
+          </Card>
         )}
 
         <div className="rounded-lg bg-white shadow border border-gray-200 p-4">
@@ -91,16 +162,21 @@ export default function TransactionsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label className="block text-sm font-medium text-gray-700 mb-1">
                 Catégorie
-              </label>
-              <input
-                type="text"
+              </Label>
+              <UISelect
                 value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                placeholder="ID catégorie"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-              />
+                onValueChange={setFilterCategory}
+                className="min-w-[160px]"
+              >
+                <option value="">Toutes</option>
+                {categoryOptions.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </UISelect>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -114,7 +190,7 @@ export default function TransactionsPage() {
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
               <button
                 onClick={handleSearch}
                 disabled={isLoading}
@@ -122,6 +198,13 @@ export default function TransactionsPage() {
               >
                 {isLoading ? "Chargement..." : "Filtrer"}
               </button>
+              <Button
+                variant="outline"
+                onClick={handleExportCSV}
+                disabled={transactions.length === 0}
+              >
+                📥 Export CSV
+              </Button>
             </div>
           </div>
         </div>
@@ -164,7 +247,7 @@ export default function TransactionsPage() {
                 transactions.map((transaction) => (
                   <tr key={transaction.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(transaction.transactionDate).toLocaleDateString("fr-FR")}
+                      {new Date(transaction.date).toLocaleDateString("fr-FR")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {transaction.label}

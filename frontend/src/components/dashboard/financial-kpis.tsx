@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   TrendingDown,
   TrendingUp,
-  WalletCards,
 } from "lucide-react";
 import {
   Card,
@@ -254,8 +253,6 @@ export function FinancialKpis({
       solvencyTrend,
     };
   }, [data, previousRatios]);
-
-  const hasData = Boolean(data);
 
   return (
     <Card
