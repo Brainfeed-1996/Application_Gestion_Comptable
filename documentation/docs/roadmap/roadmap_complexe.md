@@ -45,12 +45,12 @@ L'application SaaS de gestion comptable vise à offrir une solution complète, m
 |-------|-----|---------------------|---------------|--------|
 | Phase 0 | Setup Initial | [x] **85%** | 3-4 semaines | En cours |
 | Phase 1 | Core MVP | [~] **40%** | 10-14 semaines | En cours |
-| Phase 2 | Module Facturation | [ ] **0%** | 8-10 semaines | Planifiée |
-| Phase 3 | Module Trésorerie | [ ] **0%** | 6-8 semaines | Planifiée |
+| Phase 2 | Module Facturation | [~] **25%** | 8-10 semaines | En cours |
+| Phase 3 | Module Trésorerie | [~] **15%** | 6-8 semaines | En cours |
 | Phase 4 | Module Conformité | [ ] **0%** | 8-10 semaines | Planifiée |
 | Phase 5 | Module IA | [ ] **0%** | 10-12 semaines | Planifiée |
-| Phase 6 | Infrastructure & Ops | [ ] **0%** | 6-8 semaines | Planifiée |
-| **TOTAL** | **Projet Complet** | **[~] ~12%** | **51-66 semaines** | **En cours** |
+| Phase 6 | Infrastructure & Ops | [x] **90%** | 6-8 semaines | En cours |
+| **TOTAL** | **Projet Complet** | **[~] ~25%** | **51-66 semaines** | **En cours** |
 
 ### Progression Cumulée par Module
 
