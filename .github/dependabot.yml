@@ -1,0 +1,62 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "@frontend-team"
+    assignees:
+      - "@frontend-team"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "deps(frontend)"
+    groups:
+      development-dependencies:
+        patterns:
+          - "*"
+        dependency-type: "development"
+
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "@backend-team"
+    assignees:
+      - "@backend-team"
+    labels:
+      - "dependencies"
+      - "pip"
+    commit-message:
+      prefix: "deps(backend)"
+    groups:
+      development-dependencies:
+        patterns:
+          - "*"
+        dependency-type: "development"
+
+  - package-ecosystem: "docker"
+    directory: "/infra/docker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "@devops-team"
+    assignees:
+      - "@devops-team"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "deps(infra)"
