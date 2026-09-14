@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Modal, ModalTrigger, ModalContent, ModalHeader, ModalTitle } from '@/components/ui/modal';
+import { Modal, ModalTrigger, ModalContent, ModalHeader, ModalTitle, ModalClose } from '@/components/ui/modal';
 import { PaymentForm } from '@/components/payments/payment-form';
 import { usePayments } from '@/hooks/use-payments';
 import { useInvoices } from '@/hooks/use-invoices';
@@ -20,7 +20,6 @@ export default function PaymentsPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const { payments, isLoading: isLoadingPayments, refetch } = usePayments();
   const { invoices } = useInvoices();
-  const [showModal, setShowModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
@@ -45,10 +44,7 @@ export default function PaymentsPage() {
   });
 
   const handleSubmit = (data: PaymentCreate) => {
-    // In a real app, this would call the API
     console.log('Create payment:', data);
-    setShowModal(false);
-    // Refetch would happen after API integration
     refetch();
   };
 
@@ -70,7 +66,7 @@ export default function PaymentsPage() {
               </ModalHeader>
               <PaymentForm
                 onSubmit={handleSubmit}
-                onCancel={() => setShowModal(false)}
+                onCancel={() => {}}
                 invoices={invoices}
               />
             </ModalContent>
@@ -142,11 +138,9 @@ export default function PaymentsPage() {
           invoices={invoices}
           isLoading={isLoadingPayments}
           onEdit={(payment) => {
-            // Edit functionality
             console.log('Edit payment:', payment);
           }}
           onDelete={(id) => {
-            // Delete functionality
             console.log('Delete payment:', id);
           }}
         />

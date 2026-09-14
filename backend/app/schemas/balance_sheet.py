@@ -82,3 +82,21 @@ class BalanceSheetValidationResponse(BaseModel):
     total_actif: float
     total_passif_plus_equity: float
     message: str
+
+
+class BalanceSheetTemplateCreate(BaseModel):
+    name: str = Field(..., max_length=255)
+    description: Optional[str] = None
+    business_type: Optional[str] = Field(default=None, max_length=50)
+    is_default: bool = False
+    is_active: bool = True
+    structure: dict[str, Any]
+
+
+class BalanceSheetTemplateUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, max_length=255)
+    description: Optional[str] = None
+    business_type: Optional[str] = Field(default=None, max_length=50)
+    is_default: Optional[bool] = None
+    is_active: Optional[bool] = None
+    structure: Optional[dict[str, Any]] = None

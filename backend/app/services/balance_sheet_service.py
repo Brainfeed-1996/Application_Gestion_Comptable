@@ -321,6 +321,86 @@ class BalanceSheetTemplateService:
             raise NotFoundException("Template not found")
         return template
 
+    async def get_template_by_id(self, template_id: UUID, org_id: UUID) -> BalanceSheetTemplate | None:
+        query = select(BalanceSheetTemplate).where(
+            BalanceSheetTemplate.id == template_id,
+            BalanceSheetTemplate.organization_id.in_([org_id, None]),
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def create_template(self, template_data: dict) -> BalanceSheetTemplate:
+        template = BalanceSheetTemplate(
+            organization_id=self.org_id,
+            name=template_data["name"],
+            description=template_data.get("description"),
+            business_type=template_data.get("business_type"),
+            is_default=template_data.get("is_default", False),
+            is_active=template_data.get("is_active", True),
+            structure=template_data["structure"],
+        )
+        if template.is_default:
+            await self._unset_default_templates()
+        self.db.add(template)
+        await self.db.flush()
+        return template
+
+    async def update_template(self, template_id: UUID, data: dict) -> BalanceSheetTemplate:
+        template = await self.get_template(template_id)
+        if template.organization_id is not None and template.organization_id != self.org_id:
+            raise NotFoundException("Template not found")
+
+        if "name" in data:
+            template.name = data["name"]
+        if "description" in data:
+            template.description = data["description"]
+        if "business_type" in data:
+            template.business_type = data["business_type"]
+        if "is_default" in data:
+            if data["is_default"]:
+                await self._unset_default_templates()
+            template.is_default = data["is_default"]
+        if "is_active" in data:
+            template.is_active = data["is_active"]
+        if "structure" in data:
+            template.structure = data["structure"]
+
+        await self.db.flush()
+        return template
+
+    async def set_default_template(self, template_id: UUID) -> BalanceSheetTemplate:
+        template = await self.get_template(template_id)
+        await self._unset_default_templates()
+        template.is_default = True
+        await self.db.flush()
+        return template
+
+    async def delete_template(self, template_id: UUID) -> None:
+        template = await self.get_template(template_id)
+        if template.organization_id is not None and template.organization_id != self.org_id:
+            raise NotFoundException("Template not found")
+        template.is_active = False
+        template.is_default = False
+        await self.db.flush()
+
+    async def _unset_default_templates(self) -> None:
+        query = select(BalanceSheetTemplate).where(
+            BalanceSheetTemplate.organization_id.in_([self.org_id, None]),
+            BalanceSheetTemplate.is_default == True,
+        )
+        result = await self.db.execute(query)
+        for t in result.scalars().all():
+            t.is_default = False
+
+    async def get_default_template(self) -> BalanceSheetTemplate | None:
+        query = select(BalanceSheetTemplate).where(
+            BalanceSheetTemplate.organization_id.in_([self.org_id, None]),
+            BalanceSheetTemplate.is_default == True,
+            BalanceSheetTemplate.is_active == True,
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
     async def create_default_templates(self) -> list[BalanceSheetTemplate]:
         templates = []
         for biz_type in ["SARL", "SAS", "EI", "SCI", "SA", "EURL", "SASU", "ASSOCIATION"]:

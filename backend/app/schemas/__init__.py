@@ -6,6 +6,8 @@ from app.schemas.notification import (
 )
 from app.schemas.balance_sheet import (
     BalanceSheetTemplateResponse,
+    BalanceSheetTemplateCreate,
+    BalanceSheetTemplateUpdate,
     BalanceSheetDraftResponse,
     BalanceSheetDraftCreate,
     BalanceSheetDraftUpdate,
@@ -55,6 +57,8 @@ __all__ = [
     "NotificationResponse",
     "NotificationUpdate",
     "BalanceSheetTemplateResponse",
+    "BalanceSheetTemplateCreate",
+    "BalanceSheetTemplateUpdate",
     "BalanceSheetDraftResponse",
     "BalanceSheetDraftCreate",
     "BalanceSheetDraftUpdate",
