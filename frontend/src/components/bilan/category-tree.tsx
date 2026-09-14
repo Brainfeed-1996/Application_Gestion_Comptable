@@ -42,15 +42,7 @@ export interface CategoryTreeProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const CATEGORY_ICONS: Record<BilanCategory, string> = {
-  actif: "A",
-  passif: "P",
-  capitaux_propres: "CP",
-};
-
-function buildTree(
-  groups: CategoryTreeProps["groups"],
-): CategoryTreeNode[] {
+function buildTree(groups: CategoryTreeProps["groups"]): CategoryTreeNode[] {
   return groups.map((group) => ({
     id: group.category,
     label: group.label,
@@ -60,7 +52,9 @@ function buildTree(
     category: group.category,
     children: group.accounts.map((acc) => ({
       id: `${group.category}:${acc.account_code}`,
-      label: acc.account_name ? `${acc.account_code} — ${acc.account_name}` : acc.account_code,
+      label: acc.account_name
+        ? `${acc.account_code} — ${acc.account_name}`
+        : acc.account_code,
       amount: Number(acc.amount) || 0,
       isLeaf: true,
       kind: "account",
@@ -84,8 +78,7 @@ export function CategoryTree({
 
   const tree = useMemo(() => buildTree(groups), [groups]);
 
-  const formatAmount = (amount: number) =>
-    `${formatNumber(amount)} ${currency}`;
+  const formatAmount = (amount: number) => `${formatNumber(amount)} ${currency}`;
 
   const toggleNode = useCallback((id: string) => {
     setExpanded((prev) => {
@@ -129,6 +122,7 @@ export function CategoryTree({
             onToggle={toggleNode}
             onAccountClick={handleAccountClick}
             currency={currency}
+            formatAmount={formatAmount}
           />
         ))}
       </ul>
@@ -147,6 +141,7 @@ interface TreeNodeProps {
   onToggle: (id: string) => void;
   onAccountClick: (node: CategoryTreeNode) => void;
   currency: string;
+  formatAmount: (amount: number) => string;
 }
 
 function TreeNode({
@@ -155,7 +150,7 @@ function TreeNode({
   expanded,
   onToggle,
   onAccountClick,
-  currency,
+  formatAmount,
 }: TreeNodeProps) {
   const isExpanded = expanded.has(node.id);
   const hasChildren = node.kind === "category" && (node.children?.length ?? 0) > 0;
@@ -237,7 +232,7 @@ function TreeNode({
               expanded={expanded}
               onToggle={onToggle}
               onAccountClick={onAccountClick}
-              currency={currency}
+              formatAmount={formatAmount}
             />
           ))}
         </ul>

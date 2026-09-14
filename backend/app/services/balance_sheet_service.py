@@ -634,16 +634,6 @@ class BalanceSheetTemplateService:
         result = await db.execute(query)
         return list(result.scalars().all())
 
-    async def get_default_template(self, business_type: str, db: AsyncSession) -> BalanceSheetTemplate | None:
-        query = select(BalanceSheetTemplate).where(
-            BalanceSheetTemplate.business_type == business_type,
-            BalanceSheetTemplate.is_default == True,
-            BalanceSheetTemplate.is_active == True,
-            BalanceSheetTemplate.organization_id.is_(None),
-        )
-        result = await db.execute(query)
-        return result.scalar_one_or_none()
-
     async def create_draft_from_template(self, template_id: UUID, org_id: UUID, name: str) -> BalanceSheetDraft:
         template = await self.get_template(template_id)
         

@@ -144,3 +144,53 @@ async def quick_generate(
     service = BalanceSheetTemplateService(db, current_user.organization_id)
     totals = await service.quick_generate(data.model_dump())
     return {"totals": totals, "draft_id": None}
+
+
+@router.get("/templates/default/{business_type}", response_model=BalanceSheetTemplateResponse)
+async def get_default_template(
+    business_type: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    service = BalanceSheetTemplateService(db, current_user.organization_id)
+    template = await service.get_default_template(business_type, db)
+    if not template:
+        from app.core.exceptions import NotFoundException
+        raise NotFoundException(f"Default template for business type {business_type} not found")
+    return template
+
+
+@router.put("/drafts/{draft_id}/status", response_model=BalanceSheetDraftResponse)
+async def update_draft_status(
+    draft_id: UUID,
+    data: BalanceSheetDraftStatusUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    service = BalanceSheetTemplateService(db, current_user.organization_id)
+    draft = await service.update_draft_status(draft_id, data.status)
+    return draft
+
+
+@router.post("/drafts/{draft_id}/duplicate", response_model=BalanceSheetDraftResponse)
+async def duplicate_draft(
+    draft_id: UUID,
+    data: BalanceSheetDuplicateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    service = BalanceSheetTemplateService(db, current_user.organization_id)
+    draft = await service.duplicate_draft(draft_id, data.name)
+    return draft
+
+
+@router.get("/drafts/{draft_id}/validate", response_model=BalanceSheetValidationResponse)
+async def validate_draft(
+    draft_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    service = BalanceSheetTemplateService(db, current_user.organization_id)
+    draft = await service.get_draft(draft_id)
+    validation = await service.validate_balance(draft)
+    return validation
